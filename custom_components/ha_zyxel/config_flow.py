@@ -21,6 +21,9 @@ DATA_SCHEMA = vol.Schema(
         vol.Required(CONF_HOST, default=DEFAULT_HOST): str,
         vol.Required(CONF_USERNAME, default=DEFAULT_USERNAME): str,
         vol.Required(CONF_PASSWORD): str,
+        vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): vol.All(
+            vol.Coerce(int), vol.Range(min=10, max=300)
+        ),
     }
 )
 

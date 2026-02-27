@@ -169,24 +169,29 @@ class NR7101:
         # Check login
         #await self._get("/UserLoginCheck")
 
-    async def get_status(self, retries=2):
-
-        # Define endpoint priorities based on router type
+    async def get_status(self, retries=2, include_heavy=True):
+        # Endpoints refreshed every cycle.
         endpoints_to_try = [
             ("cellwan_status", "cellular"),
             ("Traffic_Status", "traffic"),
             ("cardpage_status", "cardpage"),
-            ("lan", "lan"),
-            ("lanhosts", "lanhosts"),
-            ("wifi_easy_mesh", "wifi_mesh"),
-            ("one_connect", "one_connect"),
-            ("cellwan_sms", "sms"),
             ("status", "device"),
         ]
+        # Expensive or low-volatility endpoints refreshed less frequently.
+        if include_heavy:
+            endpoints_to_try.extend(
+                [
+                    ("lan", "lan"),
+                    ("lanhosts", "lanhosts"),
+                    ("wifi_easy_mesh", "wifi_mesh"),
+                    ("one_connect", "one_connect"),
+                    ("cellwan_sms", "sms"),
+                ]
+            )
 
         while retries > 0:
             try:
-                result = {}
+                result = dict(self.last_status_data or {})
                 successful_endpoints = 0
 
                 for endpoint, key in endpoints_to_try:

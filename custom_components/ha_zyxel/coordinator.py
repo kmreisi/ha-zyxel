@@ -26,8 +26,10 @@ class ZyxelDataUpdateCoordinator(DataUpdateCoordinator):
         self.hass = hass
         self.entry = entry
         self.config = (entry.data or {}).copy()
+        self._update_cycle = 0
         self._device_info = None  # sarà creato solo la prima volta        
-        super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=timedelta(seconds=DEFAULT_SCAN_INTERVAL))
+        scan_interval = int(self.config.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL))
+        super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=timedelta(seconds=scan_interval))
         self.router = NR7101(self.config[CONF_HOST], self.config[CONF_USERNAME], self.config[CONF_PASSWORD])
     
     @property
@@ -65,7 +67,11 @@ class ZyxelDataUpdateCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self):
         router = self.router
-        hass = self.hass
+        self._update_cycle += 1
+        include_heavy_endpoints = (
+            self._update_cycle == 1
+            or self._update_cycle % DEFAULT_HEAVY_UPDATE_EVERY == 0
+        )
         
         if router.sessionkey is None:
             try:
@@ -77,7 +83,7 @@ class ZyxelDataUpdateCoordinator(DataUpdateCoordinator):
         """Fetch data from the router."""
         try:
             async with async_timeout.timeout(15):
-                data = await router.get_status()
+                data = await router.get_status(include_heavy=include_heavy_endpoints)
 
                 if not data:
                     raise UpdateFailed("No data received from router")
