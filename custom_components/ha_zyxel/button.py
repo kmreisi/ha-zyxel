@@ -41,8 +41,7 @@ class ZyxelRebootButton(ZyxelBaseEntity, ButtonEntity):
         """Handle the button press."""
         _LOGGER.info("Attempting to reboot Zyxel device")
         try:
-            await self.router.reboot()
+            await self.coordinator.router.reboot()
             _LOGGER.info("Zyxel device reboot command sent successfully")
         except Exception as err:
             _LOGGER.error("Failed to send reboot command: %s", err)
-
