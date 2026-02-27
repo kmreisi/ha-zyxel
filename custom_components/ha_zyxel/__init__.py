@@ -23,9 +23,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator = ZyxelDataUpdateCoordinator(hass, entry=entry)
     entry.runtime_data = coordinator
 
-    await coordinator.async_config_entry_first_refresh()
-
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    try:
+        await coordinator.async_config_entry_first_refresh()
+        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    except Exception:
+        await coordinator.router.close()
+        entry.runtime_data = None
+        raise
 
     return True
 
@@ -41,5 +45,4 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     
     await coordinator.router.close()
     return unload_ok
-
 
