@@ -6,7 +6,13 @@ import voluptuous as vol
 from homeassistant import config_entries, core, exceptions
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_USERNAME
 
-from .const import DEFAULT_HOST, DEFAULT_USERNAME, DOMAIN
+from .const import (
+    CONF_SCAN_INTERVAL,
+    DEFAULT_HOST,
+    DEFAULT_SCAN_INTERVAL,
+    DEFAULT_USERNAME,
+    DOMAIN,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
