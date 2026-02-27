@@ -13,7 +13,6 @@ import aiohttp
 import asyncio
 from aiohttp import ClientResponseError
 
-import requests
 import urllib3
 
 logger = logging.getLogger(__name__)
@@ -42,7 +41,12 @@ class NR7101:
         self.iv = None
 
         self.cookiejar = aiohttp.CookieJar(unsafe=True)  # accetta self-signed cert
-        self.session = aiohttp.ClientSession(cookie_jar=self.cookiejar, connector=aiohttp.TCPConnector(ssl=False))
+        timeout = aiohttp.ClientTimeout(total=12, connect=4, sock_connect=4, sock_read=8)
+        self.session = aiohttp.ClientSession(
+            cookie_jar=self.cookiejar,
+            timeout=timeout,
+            connector=aiohttp.TCPConnector(ssl=False),
+        )
 
     async def close(self):
         await self.session.close()
@@ -196,8 +200,8 @@ class NR7101:
                             successful_endpoints += 1
                     except ClientResponseError as e:
                         logger.debug(f"Error get_status, url: {endpoint} , error: {e}")
-                        if e.status == 401:
-                            # Re-raise 401 to trigger login retry
+                        if e.status in (401, 500):
+                            # Re-raise auth/session failures to trigger a single coordinated retry
                             raise
                     except Exception as e:
                         logger.debug(f"Error get_status, url: {endpoint} , error: {e}")
@@ -266,13 +270,10 @@ class NR7101:
         except ClientResponseError as e:
             logger.debug(f"Error get_json_object, url: {path} , error: {e}")
             if e.status in (401, 500):
+                # Let upper-level retry logic perform a single re-login for this cycle.
+                self.sessionkey = None
                 await self.clear_cookies()
-                await self.initialize()
-                await self.login()
-                path = f"/cgi-bin/DAL?oid={oid}"
-                if self.sessionkey:
-                    path += f"&sessionkey={self.sessionkey}"
-                r = await self._get(path)
+                raise
             else:
                 raise
         

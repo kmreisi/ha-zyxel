@@ -5,9 +5,7 @@ import async_timeout
 from datetime import timedelta
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_SCAN_INTERVAL, CONF_TIMEOUT
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady, ConfigEntryError
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.helpers.typing import ConfigType
@@ -73,8 +71,8 @@ class ZyxelDataUpdateCoordinator(DataUpdateCoordinator):
             try:
                 await router.login()
             except Exception as ex:
-                _LOGGER.error("Could not connect to Zyxel router: %s" % ex)
-                raise ConfigEntryNotReady from ex
+                _LOGGER.error("Could not connect to Zyxel router: %s", ex)
+                raise UpdateFailed(f"Could not connect to Zyxel router: {ex}") from ex
 
         """Fetch data from the router."""
         try:
